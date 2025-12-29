@@ -13,8 +13,7 @@ import {
   Brain,
   Shield,
   Clock,
-  Users,
-  Star
+  Users
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
