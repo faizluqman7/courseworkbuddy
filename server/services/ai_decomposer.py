@@ -37,49 +37,133 @@ def get_gemini_model():
     )
 
 
-def clean_json_response(text: str) -> str:
+def repair_json(text: str) -> str:
     """
-    Clean the AI response to extract valid JSON.
-    Handles markdown code blocks and other formatting issues.
+    Repair malformed JSON from AI responses.
+    Handles: unterminated strings, missing brackets, truncation, markdown fences.
+    Uses a state machine to properly track string boundaries.
     """
     if not text:
-        return ""
-    
-    # Remove markdown code blocks if present
+        return "{}"
+
     text = text.strip()
-    
-    # Handle ```json ... ``` blocks
+
+    # Remove markdown fences
     if text.startswith("```"):
-        # Find the end of the opening fence
-        first_newline = text.find('\n')
-        if first_newline > 0:
-            text = text[first_newline + 1:]
-        # Remove closing fence
-        if text.endswith("```"):
-            text = text[:-3]
+        first_nl = text.find('\n')
+        if first_nl > 0:
+            text = text[first_nl + 1:]
+        if "```" in text:
+            text = text[:text.rfind("```")]
         text = text.strip()
-    
-    # Try to find JSON object boundaries
-    start_idx = text.find('{')
-    if start_idx == -1:
-        return text
-    
-    # Find matching closing brace
-    brace_count = 0
-    end_idx = -1
-    for i, char in enumerate(text[start_idx:], start=start_idx):
+
+    # Find JSON start
+    start = text.find('{')
+    if start == -1:
+        return "{}"
+    text = text[start:]
+
+    # State machine to track JSON structure
+    result = []
+    i = 0
+    stack = []  # Track open brackets: '{' or '['
+    in_string = False
+    escape_next = False
+
+    while i < len(text):
+        char = text[i]
+
+        if escape_next:
+            result.append(char)
+            escape_next = False
+            i += 1
+            continue
+
+        if char == '\\' and in_string:
+            result.append(char)
+            escape_next = True
+            i += 1
+            continue
+
+        if char == '"' and not escape_next:
+            in_string = not in_string
+            result.append(char)
+            i += 1
+            continue
+
+        if in_string:
+            # Handle problematic characters in strings
+            if char in '\n\r\t':
+                # Replace literal newlines/tabs with escaped versions
+                if char == '\n':
+                    result.append('\\n')
+                elif char == '\r':
+                    result.append('\\r')
+                elif char == '\t':
+                    result.append('\\t')
+            else:
+                result.append(char)
+            i += 1
+            continue
+
+        # Outside string - track structure
         if char == '{':
-            brace_count += 1
+            stack.append('{')
+            result.append(char)
+        elif char == '[':
+            stack.append('[')
+            result.append(char)
         elif char == '}':
-            brace_count -= 1
-            if brace_count == 0:
-                end_idx = i
-                break
-    
-    if end_idx > start_idx:
-        return text[start_idx:end_idx + 1]
-    
-    return text
+            if stack and stack[-1] == '{':
+                stack.pop()
+            result.append(char)
+        elif char == ']':
+            if stack and stack[-1] == '[':
+                stack.pop()
+            result.append(char)
+        else:
+            result.append(char)
+
+        i += 1
+
+        # Stop if we've closed the root object
+        if not stack and result and result[0] == '{':
+            break
+
+    json_str = ''.join(result)
+
+    # Fix unterminated string
+    if in_string:
+        json_str += '"'
+
+    # Close any remaining open brackets (in reverse order)
+    while stack:
+        bracket = stack.pop()
+        if bracket == '{':
+            json_str += '}'
+        else:
+            json_str += ']'
+
+    # Validate and attempt parse
+    try:
+        json.loads(json_str)
+        return json_str
+    except json.JSONDecodeError:
+        # Try to fix common issues
+        # Remove trailing comma before closing bracket
+        json_str = re.sub(r',\s*([}\]])', r'\1', json_str)
+        # Remove any content after the last valid closing brace
+        last_brace = json_str.rfind('}')
+        if last_brace > 0:
+            json_str = json_str[:last_brace + 1]
+        # Try again
+        try:
+            json.loads(json_str)
+            return json_str
+        except json.JSONDecodeError:
+            # Ultimate fallback - return empty object
+            print(f"JSON repair failed. Length: {len(json_str)}, First 200: {json_str[:200]}")
+            return "{}"
 
 
 def decompose_coursework(pdf_text: str) -> DecompositionResponse:
@@ -113,7 +197,7 @@ def decompose_coursework(pdf_text: str) -> DecompositionResponse:
             raise DecomposerError("Empty response from AI")
         
         # Clean and parse the response
-        content = clean_json_response(response.text)
+        content = repair_json(response.text)
         
         try:
             data = json.loads(content)
