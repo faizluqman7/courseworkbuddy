@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 server/.env
+server/models/__pycache__
+server/prompts/__pycache__
+server/services/__pycache__

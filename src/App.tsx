@@ -78,10 +78,10 @@ function AppContent() {
 
               <div className="relative max-w-6xl mx-auto px-6 text-center">
                 {/* Badge */}
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-sm mb-8 animate-fade-in">
+                {/* <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-sm mb-8 animate-fade-in">
                   <Star className="w-4 h-4 text-[var(--color-warning)]" />
                   <span className="text-[var(--color-primary-light)]">Built for Edinburgh Informatics Students</span>
-                </div>
+                </div> */}
 
                 {/* Headline */}
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
@@ -92,8 +92,8 @@ function AppContent() {
 
                 {/* Subtitle */}
                 <p className="text-xl text-[var(--color-text-secondary)] max-w-2xl mx-auto mb-12">
-                  Upload your PDF specification. Our AI breaks it down into actionable milestones
-                  with time estimates, file pointers, and commands — so you know exactly what to do next.
+                  Upload your PDF coursework specifications. Our AI breaks it down into actionable milestones
+                  with time estimates, implementation guides, and instructions - so you know exactly what to do next.
                 </p>
 
                 {/* Upload Zone */}
@@ -138,7 +138,7 @@ function AppContent() {
               <div className="max-w-6xl mx-auto px-6">
                 <div className="text-center mb-16">
                   <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-                    Why Students Love <span className="gradient-text">InfoFlow</span>
+                    Why Students Love <span className="gradient-text">CourseworkBuddy</span>
                   </h2>
                   <p className="text-[var(--color-text-secondary)] max-w-xl mx-auto">
                     Stop spending hours decoding requirements. Start building immediately.
@@ -238,7 +238,7 @@ function AppContent() {
                       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                     >
                       <Sparkles className="w-5 h-5 mr-2" />
-                      Try InfoFlow Now
+                      Try CourseworkBuddy Now
                     </Button>
                   </div>
                 </div>
@@ -256,7 +256,7 @@ function AppContent() {
               <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
-              <span className="font-semibold gradient-text">InfoFlow</span>
+              <span className="font-semibold gradient-text">CourseworkBuddy</span>
             </div>
             <p className="text-sm text-[var(--color-text-muted)]">
               Built for University of Edinburgh Informatics Students

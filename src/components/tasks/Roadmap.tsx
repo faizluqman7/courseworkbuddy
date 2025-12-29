@@ -12,12 +12,18 @@ import {
     Zap,
     Target,
     Trophy,
-    Flag
+    Flag,
+    Ban
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { Task, DecompositionResponse, Milestone } from '@/types'
 import { cn } from '@/lib/utils'
+import { DeadlineCountdown } from './DeadlineCountdown'
+import { GetStartedGuide } from './GetStartedGuide'
+import { MarkingCriteria } from './MarkingCriteria'
+import { PrioritizationGuide } from './PrioritizationGuide'
+import { TerminologyPanel } from './TerminologyPanel'
 
 interface RoadmapProps {
     data: DecompositionResponse
@@ -26,9 +32,7 @@ interface RoadmapProps {
 export function Roadmap({ data }: RoadmapProps) {
     const [tasks, setTasks] = useState<Task[]>(data.tasks)
     const [expandedTask, setExpandedTask] = useState<string | null>(null)
-    const [expandedMilestone, setExpandedMilestone] = useState<string | null>(
-        data.milestones?.[0]?.id || null
-    )
+    const [expandedMilestone, setExpandedMilestone] = useState<string | null>(null)
 
     // Group tasks by milestone
     const groupedTasks = useMemo(() => {
@@ -103,113 +107,200 @@ export function Roadmap({ data }: RoadmapProps) {
     }
 
     return (
-        <div className="w-full max-w-4xl space-y-16 animate-fade-in">
-            {/* Header */}
-            <div className="text-center">
-                <div className="inline-flex items-center gap-3 mb-6">
+        <div className="w-full animate-fade-in space-y-8 px-4 sm:px-6 lg:px-8">
+            {/* Header with Deadline */}
+            <div className="text-center space-y-6 max-w-4xl mx-auto">
+                <div className="inline-flex items-center gap-3 mb-2">
                     <div className="p-4 rounded-3xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] glow">
                         <Target className="w-8 h-8 text-white" />
                     </div>
                 </div>
-                <h1 className="text-4xl sm:text-5xl font-bold mb-4">
-                    {data.course_name || 'Your Learning Roadmap'}
+                <h1 className="text-4xl sm:text-5xl font-bold">
+                    {data.course_name || 'Your Implementation Guide'}
                 </h1>
                 <p className="text-lg text-[var(--color-text-secondary)]">
                     {tasks.length} tasks across {groupedTasks.length} milestones
                 </p>
+
+                {/* Deadline - Inline at top */}
+                <DeadlineCountdown
+                    deadline={data.deadline}
+                    deadlineNote={data.deadline_note}
+                />
             </div>
 
-            {/* Overall Progress */}
-            <div className="glass rounded-3xl p-10">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                        <Trophy className="w-6 h-6 text-[var(--color-success)]" />
-                        <span className="text-lg font-medium">Overall Progress</span>
-                    </div>
-                    <span className="text-3xl font-bold gradient-text">{Math.round(progress)}%</span>
-                </div>
-                <div className="h-4 bg-[var(--color-surface-elevated)] rounded-full overflow-hidden">
-                    <div
-                        className="h-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-success)] transition-all duration-700 rounded-full"
-                        style={{ width: `${progress}%` }}
-                    />
-                </div>
-                <p className="text-[var(--color-text-muted)] mt-4 text-center">
-                    {completedTasks} of {tasks.length} tasks • {data.total_estimated_time || `~${Math.round(totalMins / 60)}h`} total
+            {/* AI Disclaimer */}
+            <div className="max-w-4xl mx-auto p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                <p className="text-sm text-amber-400 text-center">
+                    ⚠️ AI-generated content may be inaccurate. Always cross-check with your original specifications.
                 </p>
+                {data.extraction_warnings && data.extraction_warnings.length > 0 && (
+                    <p className="text-xs text-amber-400/80 text-center mt-2">
+                        Some fields could not be extracted: {data.extraction_warnings.join(', ')}. Please verify manually.
+                    </p>
+                )}
             </div>
 
-            {/* Summary Overview */}
-            {data.summary_overview && (
-                <div className="glass rounded-3xl p-10 text-center">
-                    <h2 className="text-xl font-semibold mb-4 text-[var(--color-primary-light)]">
-                        📋 Overview
-                    </h2>
-                    <p className="text-lg text-[var(--color-text-secondary)] leading-relaxed max-w-3xl mx-auto">
-                        {data.summary_overview}
-                    </p>
+            {/* === KEY INFO === */}
+            <section>
+                <div className="flex items-center gap-4 mb-6">
+                    <h2 className="text-lg font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Key Info</h2>
+                    <div className="flex-1 h-px bg-[var(--color-border)]" />
                 </div>
-            )}
-
-            {/* What You Need To Do */}
-            {data.what_you_need_to_do && (
-                <div className="glass rounded-3xl p-10 bg-gradient-to-br from-[var(--color-primary)]/5 to-transparent">
-                    <h2 className="text-xl font-semibold mb-4 flex items-center justify-center gap-3">
-                        <Target className="w-6 h-6 text-[var(--color-primary)]" />
-                        What You Need to Do
-                    </h2>
-                    <p className="text-lg text-[var(--color-text-secondary)] leading-relaxed text-center max-w-3xl mx-auto">
-                        {data.what_you_need_to_do}
-                    </p>
-                </div>
-            )}
-
-            {/* Key Deliverables */}
-            {data.key_deliverables && data.key_deliverables.length > 0 && (
-                <div className="glass rounded-3xl p-10">
-                    <h2 className="text-xl font-semibold mb-6 flex items-center justify-center gap-3">
-                        <Flag className="w-6 h-6 text-[var(--color-success)]" />
-                        Key Deliverables
-                    </h2>
-                    <ul className="space-y-4 max-w-2xl mx-auto">
-                        {data.key_deliverables.map((deliverable, i) => (
-                            <li key={i} className="flex items-start gap-4 p-4 rounded-xl bg-[var(--color-surface-elevated)]/50">
-                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--color-success)]/20 flex items-center justify-center text-sm font-bold text-[var(--color-success)]">
-                                    {i + 1}
-                                </div>
-                                <span className="text-lg text-[var(--color-text-secondary)] pt-0.5">{deliverable}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {/* Setup Instructions */}
-            {data.setup_instructions && data.setup_instructions.length > 0 && (
-                <div className="rounded-3xl p-10 bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
-                    <div className="flex items-start gap-6 max-w-3xl mx-auto">
-                        <div className="p-3 rounded-2xl bg-[var(--color-warning)]/20">
-                            <Zap className="w-8 h-8 text-[var(--color-warning)]" />
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {/* Progress Card */}
+                    <div className="glass rounded-3xl p-10">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-4">
+                                <Trophy className="w-7 h-7 text-[var(--color-success)]" />
+                                <span className="text-xl font-semibold">Progress</span>
+                            </div>
+                            <span className="text-4xl font-bold gradient-text">{Math.round(progress)}%</span>
                         </div>
-                        <div className="flex-1">
-                            <h3 className="text-xl font-semibold text-[var(--color-warning)] mb-4">
-                                Setup Required First
+                        <div className="h-4 bg-[var(--color-surface-elevated)] rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-success)] transition-all duration-700 rounded-full"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+                        <p className="text-[var(--color-text-muted)] mt-5 text-base">
+                            {completedTasks} of {tasks.length} tasks • {data.total_estimated_time || `~${Math.round(totalMins / 60)}h`} total
+                        </p>
+                    </div>
+
+                    {/* Quick Overview Card */}
+                    {data.summary_overview && (
+                        <div className="glass rounded-3xl p-10">
+                            <h3 className="text-xl font-semibold mb-4 flex items-center gap-3">
+                                📋 <span>Overview</span>
                             </h3>
-                            <ul className="space-y-4">
-                                {data.setup_instructions.map((instruction, i) => (
-                                    <li key={i} className="flex items-start gap-3 text-[var(--color-text-secondary)]">
-                                        <span className="text-[var(--color-warning)] mt-1.5">•</span>
-                                        <span className="leading-relaxed">{instruction}</span>
+                            <p className="text-[var(--color-text-secondary)] leading-relaxed text-base">
+                                {data.summary_overview}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* What You Need To Do */}
+                    {data.what_you_need_to_do && (
+                        <div className="glass rounded-3xl p-10 bg-gradient-to-br from-[var(--color-primary)]/5 to-transparent">
+                            <h3 className="text-xl font-semibold mb-4 flex items-center gap-3">
+                                <Target className="w-6 h-6 text-[var(--color-primary)]" />
+                                What You Need to Do
+                            </h3>
+                            <p className="text-[var(--color-text-secondary)] leading-relaxed text-base">
+                                {data.what_you_need_to_do}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Key Deliverables */}
+                    {data.key_deliverables && data.key_deliverables.length > 0 && (
+                        <div className="glass rounded-3xl p-10">
+                            <h3 className="text-xl font-semibold mb-6 flex items-center gap-3">
+                                <Flag className="w-6 h-6 text-[var(--color-success)]" />
+                                Key Deliverables
+                            </h3>
+                            <ul className="space-y-3">
+                                {data.key_deliverables.map((deliverable, i) => (
+                                    <li key={i} className="flex items-start gap-4 p-4 rounded-xl bg-[var(--color-surface-elevated)]/50">
+                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--color-success)]/20 flex items-center justify-center text-sm font-bold text-[var(--color-success)]">
+                                            {i + 1}
+                                        </div>
+                                        <span className="text-base text-[var(--color-text-secondary)] pt-1">{deliverable}</span>
                                     </li>
                                 ))}
                             </ul>
                         </div>
-                    </div>
-                </div>
-            )}
+                    )}
 
-            {/* Milestones */}
-            <div className="space-y-8">
+                    {/* Constraints */}
+                    {data.constraints && data.constraints.length > 0 && (
+                        <div className="glass rounded-3xl p-10 border-red-500/20">
+                            <div className="flex items-start gap-5">
+                                <div className="p-3 rounded-xl bg-red-500/20">
+                                    <Ban className="w-6 h-6 text-red-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-xl font-bold text-red-400 mb-4">⚠️ Constraints</h3>
+                                    <ul className="space-y-3">
+                                        {data.constraints.map((constraint, i) => (
+                                            <li key={i} className="flex items-start gap-3 text-base text-[var(--color-text-secondary)]">
+                                                <span className="text-red-400 mt-1">•</span>
+                                                <span>{constraint}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Setup Instructions */}
+                    {data.setup_instructions && data.setup_instructions.length > 0 && (
+                        <div className="rounded-3xl p-10 bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
+                            <div className="flex items-start gap-5">
+                                <div className="p-3 rounded-xl bg-[var(--color-warning)]/20">
+                                    <Zap className="w-6 h-6 text-[var(--color-warning)]" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-xl font-semibold text-[var(--color-warning)] mb-4">
+                                        Setup Required
+                                    </h3>
+                                    <ul className="space-y-3">
+                                        {data.setup_instructions.map((instruction, i) => (
+                                            <li key={i} className="flex items-start gap-3 text-base text-[var(--color-text-secondary)]">
+                                                <span className="text-[var(--color-warning)] mt-1">•</span>
+                                                <span className="leading-relaxed">{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* === GUIDES === */}
+            <section>
+                <div className="flex items-center gap-4 mb-6">
+                    <h2 className="text-lg font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Guides</h2>
+                    <span className="text-sm text-[var(--color-text-muted)]">Click to expand</span>
+                    <div className="flex-1 h-px bg-[var(--color-border)]" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                    {/* Get Started Guide */}
+                    {data.get_started_steps && data.get_started_steps.length > 0 && (
+                        <GetStartedGuide
+                            steps={data.get_started_steps}
+                            directoryStructure={data.directory_structure}
+                        />
+                    )}
+
+                    {/* Marking Criteria */}
+                    {data.marking_criteria && data.marking_criteria.length > 0 && (
+                        <MarkingCriteria criteria={data.marking_criteria} />
+                    )}
+
+                    {/* Prioritization Guide */}
+                    {data.prioritization_tiers && data.prioritization_tiers.length > 0 && (
+                        <PrioritizationGuide tiers={data.prioritization_tiers} tasks={tasks} />
+                    )}
+
+                    {/* Terminology */}
+                    {data.terminology && data.terminology.length > 0 && (
+                        <TerminologyPanel terminology={data.terminology} />
+                    )}
+                </div>
+            </section>
+
+            {/* === ROADMAP === */}
+            <section>
+                <div className="flex items-center gap-4 mb-6">
+                    <h2 className="text-lg font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Roadmap</h2>
+                    <div className="flex-1 h-px bg-[var(--color-border)]" />
+                </div>
+                <div className="max-w-5xl mx-auto space-y-8">
                 {groupedTasks.map((group, groupIndex) => {
                     const isExpanded = expandedMilestone === group.milestone.id
                     const milestoneProgress = getMilestoneProgress(group.tasks)
@@ -441,7 +532,8 @@ export function Roadmap({ data }: RoadmapProps) {
                         Complete all milestones above to finish your coursework
                     </p>
                 </div>
-            </div>
+                </div>
+            </section>
         </div>
     )
 }

@@ -1,10 +1,10 @@
-# InfoFlow
+# CourseworkBuddy
 
-**AI-Powered Coursework Decomposition Tool for University of Edinburgh Informatics Students**
+**AI-Powered Coursework Implementation Guide for University of Edinburgh Informatics Students**
 
-Stop feeling overwhelmed by complex coursework specifications. InfoFlow uses AI to break down PDF assignments into manageable, actionable tasks.
+Stop feeling overwhelmed by complex coursework specifications. CourseworkBuddy uses AI to break down PDF assignments into comprehensive implementation guides with step-by-step tasks, terminology explanations, and prioritization.
 
-![InfoFlow Landing Page](/Users/faizluqman/.gemini/antigravity/brain/fefa0844-e6de-4f41-b7eb-70e9b5750a87/infoflow_landing_page_1767030666495.png)
+![CourseworkBuddy Landing Page](/Users/faizluqman/.gemini/antigravity/brain/fefa0844-e6de-4f41-b7eb-70e9b5750a87/infoflow_landing_page_1767030666495.png)
 
 ## Features
 

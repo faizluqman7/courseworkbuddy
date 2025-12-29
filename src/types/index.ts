@@ -21,7 +21,49 @@ export interface Milestone {
     tasks: string[];
 }
 
+export interface TermDefinition {
+    term: string;
+    definition: string;
+    example?: string;
+}
+
+export interface MarkingCriterion {
+    component: string;
+    percentage?: number;
+    description: string;
+    priority: 'essential' | 'strong' | 'excellence';
+}
+
+export interface GetStartedStep {
+    step_number: number;
+    title: string;
+    description: string;
+    commands: string[];
+    expected_output?: string;
+}
+
+export interface PrioritizationTier {
+    tier: 'Essential' | 'Strong' | 'Excellence';
+    description: string;
+    time_estimate: string;
+    task_ids: string[];
+}
+
+export interface WeeklySchedule {
+    week: number;
+    title: string;
+    task_ids: string[];
+    hours_estimate: number;
+}
+
+export interface DirectoryEntry {
+    path: string;
+    type: 'file' | 'directory';
+    description?: string;
+}
+
 export interface DecompositionResponse {
+    // Core fields
     tasks: Task[];
     milestones: Milestone[];
     setup_instructions?: string[];
@@ -30,6 +72,21 @@ export interface DecompositionResponse {
     summary_overview?: string;
     key_deliverables?: string[];
     what_you_need_to_do?: string;
+
+    // Implementation Guide fields
+    deadline?: string;
+    deadline_note?: string;
+    get_started_steps?: GetStartedStep[];
+    directory_structure?: DirectoryEntry[];
+    terminology?: TermDefinition[];
+    marking_criteria?: MarkingCriterion[];
+    prioritization_tiers?: PrioritizationTier[];
+    recommended_schedule?: WeeklySchedule[];
+    constraints?: string[];
+    debugging_tips?: string[];
+
+    // Extraction metadata
+    extraction_warnings?: string[];
 }
 
 export interface DecompositionRequest {
@@ -37,3 +94,4 @@ export interface DecompositionRequest {
     course_url?: string;
     repo_url?: string;
 }
+

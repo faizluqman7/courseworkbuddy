@@ -5,7 +5,11 @@ import os
 import re
 import google.generativeai as genai
 from prompts.decomposer import DECOMPOSER_SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
-from models.schemas import DecompositionResponse, Task, Milestone
+from models.schemas import (
+    DecompositionResponse, Task, Milestone,
+    TermDefinition, MarkingCriterion, GetStartedStep,
+    PrioritizationTier, WeeklySchedule, DirectoryEntry
+)
 
 
 class DecomposerError(Exception):
@@ -26,7 +30,7 @@ def get_gemini_model():
         model_name=model_name,
         generation_config=genai.GenerationConfig(
             temperature=0.3,
-            max_output_tokens=8192,
+            max_output_tokens=16384,  # Increased for larger output
             response_mime_type="application/json",
         ),
         system_instruction=DECOMPOSER_SYSTEM_PROMPT,
@@ -80,13 +84,13 @@ def clean_json_response(text: str) -> str:
 
 def decompose_coursework(pdf_text: str) -> DecompositionResponse:
     """
-    Use AI to decompose coursework specification into tasks.
+    Use AI to decompose coursework specification into an Implementation Guide.
     
     Args:
         pdf_text: Extracted text from the PDF
         
     Returns:
-        DecompositionResponse with tasks, milestones, and setup instructions
+        DecompositionResponse with tasks, milestones, and implementation guide fields
         
     Raises:
         DecomposerError: If AI fails to process the content
@@ -120,7 +124,7 @@ def decompose_coursework(pdf_text: str) -> DecompositionResponse:
             print(f"Last 500 chars: {content[-500:]}")
             raise DecomposerError(f"Invalid JSON response: {str(e)[:100]}")
         
-        # Convert to response model with safe defaults
+        # Parse tasks
         tasks = []
         for task_data in data.get("tasks", []):
             try:
@@ -140,6 +144,7 @@ def decompose_coursework(pdf_text: str) -> DecompositionResponse:
                 print(f"Error parsing task: {e}")
                 continue
         
+        # Parse milestones
         milestones = []
         for milestone_data in data.get("milestones", []):
             try:
@@ -154,10 +159,119 @@ def decompose_coursework(pdf_text: str) -> DecompositionResponse:
                 print(f"Error parsing milestone: {e}")
                 continue
         
-        if not tasks:
-            raise DecomposerError("No tasks could be extracted from the PDF")
+        # Parse terminology
+        terminology = []
+        for term_data in data.get("terminology", []):
+            try:
+                terminology.append(TermDefinition(
+                    term=str(term_data.get("term", "")),
+                    definition=str(term_data.get("definition", "")),
+                    example=str(term_data.get("example", "")) if term_data.get("example") else None,
+                ))
+            except Exception as e:
+                print(f"Error parsing term: {e}")
+                continue
         
+        # Parse marking criteria
+        marking_criteria = []
+        for mc_data in data.get("marking_criteria", []):
+            try:
+                marking_criteria.append(MarkingCriterion(
+                    component=str(mc_data.get("component", "")),
+                    percentage=int(mc_data.get("percentage")) if mc_data.get("percentage") is not None else None,
+                    description=str(mc_data.get("description", "")),
+                    priority=str(mc_data.get("priority", "essential")),
+                ))
+            except Exception as e:
+                print(f"Error parsing marking criterion: {e}")
+                continue
+        
+        # Parse get started steps
+        get_started_steps = []
+        for step_data in data.get("get_started_steps", []):
+            try:
+                get_started_steps.append(GetStartedStep(
+                    step_number=int(step_data.get("step_number", len(get_started_steps)+1)),
+                    title=str(step_data.get("title", "")),
+                    description=str(step_data.get("description", "")),
+                    commands=list(step_data.get("commands", [])) if step_data.get("commands") else [],
+                    expected_output=str(step_data.get("expected_output", "")) if step_data.get("expected_output") else None,
+                ))
+            except Exception as e:
+                print(f"Error parsing get started step: {e}")
+                continue
+        
+        # Parse prioritization tiers
+        prioritization_tiers = []
+        for tier_data in data.get("prioritization_tiers", []):
+            try:
+                prioritization_tiers.append(PrioritizationTier(
+                    tier=str(tier_data.get("tier", "")),
+                    description=str(tier_data.get("description", "")),
+                    time_estimate=str(tier_data.get("time_estimate", "")),
+                    task_ids=list(tier_data.get("task_ids", [])) if tier_data.get("task_ids") else [],
+                ))
+            except Exception as e:
+                print(f"Error parsing prioritization tier: {e}")
+                continue
+        
+        # Parse recommended schedule
+        recommended_schedule = []
+        for week_data in data.get("recommended_schedule", []):
+            try:
+                recommended_schedule.append(WeeklySchedule(
+                    week=int(week_data.get("week", len(recommended_schedule)+1)),
+                    title=str(week_data.get("title", "")),
+                    task_ids=list(week_data.get("task_ids", [])) if week_data.get("task_ids") else [],
+                    hours_estimate=int(week_data.get("hours_estimate", 0)),
+                ))
+            except Exception as e:
+                print(f"Error parsing schedule week: {e}")
+                continue
+        
+        # Parse directory structure
+        directory_structure = []
+        for dir_data in data.get("directory_structure", []):
+            try:
+                directory_structure.append(DirectoryEntry(
+                    path=str(dir_data.get("path", "")),
+                    type=str(dir_data.get("type", "file")),
+                    description=str(dir_data.get("description", "")) if dir_data.get("description") else None,
+                ))
+            except Exception as e:
+                print(f"Error parsing directory entry: {e}")
+                continue
+        
+        # Track extraction warnings
+        extraction_warnings = []
+
+        # Failsafe: if no tasks extracted, create a fallback
+        if not tasks:
+            extraction_warnings.append("tasks")
+            tasks = [Task(
+                task_id="fallback-1",
+                title="Review Specifications Manually",
+                description="Could not extract specific tasks from your PDF. Please review your coursework specifications directly and create your own task breakdown.",
+                estimated_time="Varies",
+                status="todo"
+            )]
+
+        # Track other missing fields
+        if not marking_criteria:
+            extraction_warnings.append("marking_criteria")
+        if not data.get("deadline"):
+            extraction_warnings.append("deadline")
+        if not data.get("key_deliverables"):
+            extraction_warnings.append("key_deliverables")
+        if not prioritization_tiers:
+            extraction_warnings.append("prioritization_tiers")
+        if not get_started_steps:
+            extraction_warnings.append("get_started_steps")
+        if not milestones:
+            extraction_warnings.append("milestones")
+
         return DecompositionResponse(
+            # Core fields
             tasks=tasks,
             milestones=milestones,
             setup_instructions=list(data.get("setup_instructions", [])) if data.get("setup_instructions") else [],
@@ -166,6 +280,19 @@ def decompose_coursework(pdf_text: str) -> DecompositionResponse:
             summary_overview=str(data.get("summary_overview", "")) if data.get("summary_overview") else None,
             key_deliverables=list(data.get("key_deliverables", [])) if data.get("key_deliverables") else [],
             what_you_need_to_do=str(data.get("what_you_need_to_do", "")) if data.get("what_you_need_to_do") else None,
+            
+            # NEW: Implementation Guide fields
+            deadline=str(data.get("deadline", "")) if data.get("deadline") else None,
+            deadline_note=str(data.get("deadline_note", "")) if data.get("deadline_note") else None,
+            get_started_steps=get_started_steps,
+            directory_structure=directory_structure,
+            terminology=terminology,
+            marking_criteria=marking_criteria,
+            prioritization_tiers=prioritization_tiers,
+            recommended_schedule=recommended_schedule,
+            constraints=list(data.get("constraints", [])) if data.get("constraints") else [],
+            debugging_tips=list(data.get("debugging_tips", [])) if data.get("debugging_tips") else [],
+            extraction_warnings=extraction_warnings,
         )
         
     except json.JSONDecodeError as e:
@@ -174,3 +301,4 @@ def decompose_coursework(pdf_text: str) -> DecompositionResponse:
         if isinstance(e, DecomposerError):
             raise
         raise DecomposerError(f"AI processing failed: {e}")
+

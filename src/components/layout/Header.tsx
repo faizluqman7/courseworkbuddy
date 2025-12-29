@@ -15,7 +15,7 @@ export function Header() {
                             </div>
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold gradient-text">InfoFlow</h1>
+                            <h1 className="text-xl font-bold gradient-text">CourseworkBuddy</h1>
                         </div>
                     </div>
 
