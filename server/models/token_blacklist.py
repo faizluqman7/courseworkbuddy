@@ -1,7 +1,7 @@
 """Token blacklist model for JWT revocation."""
 
 from datetime import datetime
-from sqlalchemy import String, DateTime, Index
+from sqlalchemy import String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -20,8 +20,4 @@ class TokenBlacklist(Base):
         DateTime,
         nullable=False,
         index=True
-    )
-
-    __table_args__ = (
-        Index('ix_token_blacklist_expires', 'expires_at'),
     )

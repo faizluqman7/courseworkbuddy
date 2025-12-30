@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { X, Mail, Lock, User, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { X, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -122,17 +122,14 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalP
                             <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                                 Name
                             </label>
-                            <div className="relative">
-                                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-text-muted)]" />
-                                <input
-                                    type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="Your name"
-                                    className="w-full pl-12 pr-4 py-3 rounded-xl bg-[var(--color-surface-elevated)] border border-[var(--color-border)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
-                                    required
-                                />
-                            </div>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="Your name"
+                                className="w-full px-4 py-4 text-base rounded-xl bg-[var(--color-surface-elevated)] border border-[var(--color-border)] focus:border-[var(--color-primary)] focus:outline-none transition-colors placeholder:text-[var(--color-text-muted)]"
+                                required
+                            />
                         </div>
                     )}
 
@@ -140,17 +137,14 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalP
                         <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                             Email
                         </label>
-                        <div className="relative">
-                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-text-muted)]" />
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="you@example.com"
-                                className="w-full pl-12 pr-4 py-3 rounded-xl bg-[var(--color-surface-elevated)] border border-[var(--color-border)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
-                                required
-                            />
-                        </div>
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="you@example.com"
+                            className="w-full px-4 py-4 text-base rounded-xl bg-[var(--color-surface-elevated)] border border-[var(--color-border)] focus:border-[var(--color-primary)] focus:outline-none transition-colors placeholder:text-[var(--color-text-muted)]"
+                            required
+                        />
                     </div>
 
                     <div>
@@ -158,20 +152,19 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalP
                             Password
                         </label>
                         <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-text-muted)]" />
                             <input
                                 type={showPassword ? 'text' : 'password'}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
-                                className="w-full pl-12 pr-12 py-3 rounded-xl bg-[var(--color-surface-elevated)] border border-[var(--color-border)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
+                                className="w-full px-4 py-4 pr-12 text-base rounded-xl bg-[var(--color-surface-elevated)] border border-[var(--color-border)] focus:border-[var(--color-primary)] focus:outline-none transition-colors placeholder:text-[var(--color-text-muted)]"
                                 required
                                 minLength={8}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
                             >
                                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                             </button>
@@ -183,24 +176,21 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalP
                             <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                                 Confirm Password
                             </label>
-                            <div className="relative">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-text-muted)]" />
-                                <input
-                                    type={showPassword ? 'text' : 'password'}
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    className="w-full pl-12 pr-4 py-3 rounded-xl bg-[var(--color-surface-elevated)] border border-[var(--color-border)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
-                                    required
-                                    minLength={8}
-                                />
-                            </div>
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="w-full px-4 py-4 text-base rounded-xl bg-[var(--color-surface-elevated)] border border-[var(--color-border)] focus:border-[var(--color-primary)] focus:outline-none transition-colors placeholder:text-[var(--color-text-muted)]"
+                                required
+                                minLength={8}
+                            />
                         </div>
                     )}
 
                     <Button
                         type="submit"
-                        className="w-full h-12"
+                        className="w-full h-14 text-base mt-6"
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? (

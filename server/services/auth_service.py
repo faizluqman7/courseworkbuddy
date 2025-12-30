@@ -125,11 +125,11 @@ def decode_access_token(token: str) -> Optional[Tuple[UUID, str, datetime]]:
         user_id = payload.get("sub")
         jti = payload.get("jti")
         exp = payload.get("exp")
-        if user_id is None or jti is None:
+        if user_id is None or jti is None or exp is None:
             return None
         expires_at = datetime.fromtimestamp(exp, tz=timezone.utc)
         return UUID(user_id), jti, expires_at
-    except JWTError:
+    except (JWTError, ValueError, OSError):
         return None
 
 
@@ -202,9 +202,18 @@ async def is_token_blacklisted(db: AsyncSession, jti: str) -> bool:
 
 async def blacklist_token(db: AsyncSession, jti: str, expires_at: datetime) -> None:
     """Add a token to the blacklist."""
+    # Check if already blacklisted (handle race condition)
+    if await is_token_blacklisted(db, jti):
+        return
+    # Strip timezone for DB compatibility
+    if expires_at.tzinfo is not None:
+        expires_at = expires_at.replace(tzinfo=None)
     entry = TokenBlacklist(jti=jti, expires_at=expires_at)
     db.add(entry)
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception:
+        await db.rollback()  # Already exists, ignore
 
 
 async def get_current_user(db: AsyncSession, token: str) -> User:
