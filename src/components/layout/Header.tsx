@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Github, Menu, LogIn, UserPlus } from 'lucide-react';
+import { Sparkles, Github, Menu, X, LogIn, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/auth/AuthModal';
@@ -9,17 +9,24 @@ import { Link } from 'react-router-dom';
 export function Header() {
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const { isAuthenticated, isLoading } = useAuth();
 
     const openLogin = () => {
         setAuthModalMode('login');
         setAuthModalOpen(true);
+        setMobileMenuOpen(false);
     };
 
     const openRegister = () => {
         setAuthModalMode('register');
         setAuthModalOpen(true);
+        setMobileMenuOpen(false);
+    };
+
+    const closeMobileMenu = () => {
+        setMobileMenuOpen(false);
     };
 
     return (
@@ -96,11 +103,84 @@ export function Header() {
                                 </>
                             )}
 
-                            <Button variant="ghost" size="icon" className="md:hidden">
-                                <Menu className="w-5 h-5" />
+                            {/* Mobile Menu Toggle */}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="md:hidden"
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            >
+                                {mobileMenuOpen ? (
+                                    <X className="w-5 h-5" />
+                                ) : (
+                                    <Menu className="w-5 h-5" />
+                                )}
                             </Button>
                         </div>
                     </div>
+                </div>
+
+                {/* Mobile Menu */}
+                <div
+                    className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                        }`}
+                >
+                    <nav className="px-6 py-4 border-t border-[var(--color-border)] space-y-1">
+                        {isAuthenticated && (
+                            <Link
+                                to="/dashboard"
+                                onClick={closeMobileMenu}
+                                className="block w-full text-left px-4 py-3 rounded-xl text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)] transition-colors font-medium"
+                            >
+                                My Courseworks
+                            </Link>
+                        )}
+                        <a
+                            href="#features"
+                            onClick={closeMobileMenu}
+                            className="block w-full text-left px-4 py-3 rounded-xl text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)] transition-colors"
+                        >
+                            Features
+                        </a>
+                        <a
+                            href="#how-it-works"
+                            onClick={closeMobileMenu}
+                            className="block w-full text-left px-4 py-3 rounded-xl text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)] transition-colors"
+                        >
+                            How It Works
+                        </a>
+                        <a
+                            href="https://github.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={closeMobileMenu}
+                            className="flex items-center gap-2 w-full text-left px-4 py-3 rounded-xl text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)] transition-colors"
+                        >
+                            <Github className="w-4 h-4" />
+                            GitHub
+                        </a>
+
+                        {/* Mobile Auth Buttons */}
+                        {!isAuthenticated && !isLoading && (
+                            <div className="pt-3 mt-3 border-t border-[var(--color-border)] space-y-2">
+                                <Button
+                                    variant="ghost"
+                                    onClick={openLogin}
+                                    className="w-full justify-start px-4"
+                                >
+                                    <LogIn className="w-4 h-4 mr-2" />
+                                    Sign In
+                                </Button>
+                                <Button
+                                    onClick={openRegister}
+                                    className="w-full justify-start px-4"
+                                >
+                                    <UserPlus className="w-4 h-4 mr-2" />
+                                    Sign Up
+                                </Button>
+                            </div>
+                        )}
+                    </nav>
                 </div>
             </header>
 

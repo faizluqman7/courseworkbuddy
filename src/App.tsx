@@ -17,7 +17,15 @@ import {
   Brain,
   Shield,
   Clock,
-  Users
+  Users,
+  Target,
+  GraduationCap,
+  FileText,
+  BarChart3,
+  Github,
+  Twitter,
+  Linkedin,
+  Heart
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -134,30 +142,48 @@ function HomePage() {
                 <h2 className="text-3xl sm:text-4xl font-bold mb-4">
                   Why Students Love <span className="gradient-text">CourseworkBuddy</span>
                 </h2>
-                <p className="text-[var(--color-text-secondary)] max-w-xl mx-auto">
-                  Stop spending hours decoding requirements. Start building immediately.
+                <p className="text-[var(--color-text-secondary)] max-w-2xl mx-auto">
+                  Stop spending hours decoding requirements. Our AI-powered platform transforms complex coursework specifications into clear, actionable roadmaps.
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-8">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {[
                   {
                     icon: Brain,
                     title: 'AI-Powered Analysis',
-                    description: 'Our AI reads your entire spec and extracts every requirement, deadline, and deliverable automatically.',
+                    description: 'Our advanced AI reads your entire spec and extracts every requirement, deadline, and deliverable automatically. No more missing hidden requirements.',
                     gradient: 'from-purple-500 to-indigo-500'
                   },
                   {
                     icon: Zap,
                     title: 'Instant Roadmap',
-                    description: 'Get a visual learning path with time estimates, so you can plan your week without guesswork.',
+                    description: 'Get a visual learning path with accurate time estimates within seconds, so you can plan your week without guesswork or procrastination.',
                     gradient: 'from-amber-500 to-orange-500'
                   },
                   {
                     icon: Shield,
                     title: 'Academic Integrity',
-                    description: 'We guide your thinking — never write code for you. Perfect for learning, safe for submission.',
+                    description: 'We guide your thinking — never write code for you. Perfect for learning, safe for submission, and fully compliant with academic policies.',
                     gradient: 'from-emerald-500 to-teal-500'
+                  },
+                  {
+                    icon: Target,
+                    title: 'Priority Guidance',
+                    description: 'Understand which tasks are critical for passing versus those that boost your grade. Focus your energy where it matters most.',
+                    gradient: 'from-rose-500 to-pink-500'
+                  },
+                  {
+                    icon: Clock,
+                    title: 'Time Management',
+                    description: 'Get realistic time estimates for each task based on complexity. Build a study schedule that actually works for your deadline.',
+                    gradient: 'from-cyan-500 to-blue-500'
+                  },
+                  {
+                    icon: GraduationCap,
+                    title: 'Learning Resources',
+                    description: 'Each task comes with curated terminology explanations and implementation hints to accelerate your understanding.',
+                    gradient: 'from-violet-500 to-purple-500'
                   }
                 ].map((feature, index) => (
                   <div
@@ -184,27 +210,50 @@ function HomePage() {
                 <h2 className="text-3xl sm:text-4xl font-bold mb-4">
                   How It Works
                 </h2>
-                <p className="text-[var(--color-text-secondary)]">
-                  Three simple steps to clarity
+                <p className="text-[var(--color-text-secondary)] max-w-xl mx-auto">
+                  Transform your coursework specification into a clear action plan in three simple steps
                 </p>
               </div>
 
               <div className="grid md:grid-cols-3 gap-8">
                 {[
-                  { step: '01', title: 'Upload PDF', desc: 'Drop your coursework specification' },
-                  { step: '02', title: 'AI Analysis', desc: 'Our AI extracts tasks and structure' },
-                  { step: '03', title: 'Get Roadmap', desc: 'Interactive path to completion' },
+                  {
+                    step: '01',
+                    title: 'Upload Your PDF',
+                    desc: 'Drop your coursework specification PDF into our secure uploader. We accept any standard PDF format from your university.',
+                    icon: FileText
+                  },
+                  {
+                    step: '02',
+                    title: 'AI Analysis',
+                    desc: 'Our advanced AI reads through your entire document, identifying tasks, requirements, marking criteria, and hidden dependencies.',
+                    icon: Brain
+                  },
+                  {
+                    step: '03',
+                    title: 'Get Your Roadmap',
+                    desc: 'Receive an interactive, prioritized roadmap with time estimates, implementation guides, and terminology explanations.',
+                    icon: BarChart3
+                  },
                 ].map((item, index) => (
-                  <div key={index} className="relative text-center">
-                    <div className="text-7xl font-bold text-[var(--color-primary)]/10 mb-4">
-                      {item.step}
+                  <div key={index} className="relative">
+                    <div className="glass rounded-3xl p-8 h-full">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="text-5xl font-bold gradient-text">
+                          {item.step}
+                        </div>
+                        <div className="w-12 h-12 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center">
+                          <item.icon className="w-6 h-6 text-[var(--color-primary)]" />
+                        </div>
+                      </div>
+                      <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
+                      <p className="text-[var(--color-text-secondary)] leading-relaxed">{item.desc}</p>
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                    <p className="text-[var(--color-text-secondary)]">{item.desc}</p>
-
                     {index < 2 && (
-                      <div className="hidden md:block absolute top-1/4 -right-4 text-[var(--color-text-muted)]">
-                        →
+                      <div className="hidden md:flex absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
+                        <div className="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white font-bold">
+                          →
+                        </div>
                       </div>
                     )}
                   </div>
@@ -250,18 +299,141 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       <Header />
       {children}
       {/* Footer */}
-      <footer className="border-t border-[var(--color-border)] py-8">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
+      <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface)]/30 ">
+        {/* Main Footer Content */}
+        <div className="py-16"> &nbsp;</div>
+        <div className="max-w-6xl mx-auto px-6 py-16 gap-6 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 ">
+            {/* Brand Column */}
+            <div className="col-span-2 md:col-span-1 gap-4 mb-2">
+              <div className="flex items-center gap-2 mb-4 ">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold gradient-text">CourseworkBuddy</span>
               </div>
-              <span className="font-semibold gradient-text">CourseworkBuddy</span>
+              <p className="text-sm text-[var(--color-text-secondary)] mb-6 max-w-xs">
+                Transforming complex coursework specifications into clear, actionable roadmaps for students worldwide.
+              </p>
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://twitter.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-xl bg-[var(--color-surface-elevated)] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                >
+                  <Twitter className="w-5 h-5" />
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-xl bg-[var(--color-surface-elevated)] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                >
+                  <Linkedin className="w-5 h-5" />
+                </a>
+                <a
+                  href="https://github.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-xl bg-[var(--color-surface-elevated)] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                >
+                  <Github className="w-5 h-5" />
+                </a>
+              </div>
             </div>
-            <p className="text-sm text-[var(--color-text-muted)]">
-              Built for University of Edinburgh Informatics Students
-            </p>
+
+            {/* Product Column */}
+            <div className="pt-4 md:pt-0">
+              <h4 className="font-semibold text-[var(--color-text-primary)] mb-4">Product</h4>
+              <ul className="space-y-3">
+                <li>
+                  <a href="#features" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                    Features
+                  </a>
+                </li>
+                <li>
+                  <a href="#how-it-works" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                    How It Works
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                    Pricing
+                  </a>
+                </li>
+                <li>
+                  <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                    GitHub
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Company Column */}
+            <div className="pt-4 md:pt-0 gap-4 mb-2">
+              <h4 className="font-semibold text-[var(--color-text-primary)] mb-4">Company</h4>
+              <ul className="space-y-3">
+                <li>
+                  <a href="#about" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                    About Us
+                  </a>
+                </li>
+                <li>
+                  <a href="#careers" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                    Careers
+                  </a>
+                </li>
+                <li>
+                  <a href="#blog" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                    Blog
+                  </a>
+                </li>
+                <li>
+                  <a href="#contact" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                    Contact
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Legal Column */}
+            <div className="pt-4 md:pt-0">
+              <h4 className="font-semibold text-[var(--color-text-primary)] mb-4">Legal</h4>
+              <ul className="space-y-3">
+                <li>
+                  <a href="#privacy" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="#terms" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                    Terms of Service
+                  </a>
+                </li>
+                <li>
+                  <a href="#cookies" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                    Cookie Policy
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="border-t border-[var(--color-border)]">
+          <div className="max-w-6xl mx-auto px-6 py-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+                <span>© 2024 CourseworkBuddy. All rights reserved.</span>
+              </div>
+              <div className="flex items-center gap-1 text-sm text-[var(--color-text-muted)]">
+                <span>Made with</span>
+                <Heart className="w-4 h-4 text-[var(--color-error)] fill-current" />
+                <span>for students everywhere</span>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
