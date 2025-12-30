@@ -25,8 +25,7 @@ import {
   Github,
   Twitter,
   Linkedin,
-  Heart,
-  Space
+  Heart
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
