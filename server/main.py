@@ -2,18 +2,34 @@
 
 import sys
 from pathlib import Path
+from contextlib import asynccontextmanager
 
 # Add server directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
-from routers import decompose
+from routers import decompose, auth, courseworks
+from routers.auth import limiter
+from database import create_tables
 
 # Load environment variables
 load_dotenv()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup and shutdown events."""
+    # Create database tables on startup
+    await create_tables()
+    yield
+    # Cleanup on shutdown (if needed)
+
 
 # Create FastAPI app
 app = FastAPI(
@@ -22,7 +38,12 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
+    lifespan=lifespan,
 )
+
+# Rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configure CORS for frontend
 app.add_middleware(
@@ -39,6 +60,8 @@ app.add_middleware(
 
 # Include routers
 app.include_router(decompose.router)
+app.include_router(auth.router)
+app.include_router(courseworks.router)
 
 
 @app.get("/api/health")
@@ -55,3 +78,4 @@ async def root():
         "version": "1.0.0",
         "docs": "/api/docs",
     }
+

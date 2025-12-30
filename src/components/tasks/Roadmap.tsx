@@ -13,7 +13,10 @@ import {
     Target,
     Trophy,
     Flag,
-    Ban
+    Ban,
+    Save,
+    Loader2,
+    LogIn
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -24,15 +27,26 @@ import { GetStartedGuide } from './GetStartedGuide'
 import { MarkingCriteria } from './MarkingCriteria'
 import { PrioritizationGuide } from './PrioritizationGuide'
 import { TerminologyPanel } from './TerminologyPanel'
+import { useAuth } from '@/contexts/AuthContext'
+import { AuthModal } from '@/components/auth/AuthModal'
+import { createCoursework, ApiError } from '@/services/api'
 
 interface RoadmapProps {
     data: DecompositionResponse
+    onTaskChange?: (data: DecompositionResponse) => void
+    isSaved?: boolean
 }
 
-export function Roadmap({ data }: RoadmapProps) {
+export function Roadmap({ data, onTaskChange, isSaved = false }: RoadmapProps) {
     const [tasks, setTasks] = useState<Task[]>(data.tasks)
     const [expandedTask, setExpandedTask] = useState<string | null>(null)
     const [expandedMilestone, setExpandedMilestone] = useState<string | null>(null)
+    const [authModalOpen, setAuthModalOpen] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
+    const [saveSuccess, setSaveSuccess] = useState(false)
+    const [saveError, setSaveError] = useState<string | null>(null)
+
+    const { isAuthenticated } = useAuth()
 
     // Group tasks by milestone
     const groupedTasks = useMemo(() => {
@@ -59,12 +73,42 @@ export function Roadmap({ data }: RoadmapProps) {
     }, [tasks, data.milestones])
 
     const handleStatusChange = useCallback((taskId: string, newStatus: Task['status']) => {
-        setTasks(prev =>
-            prev.map(task =>
+        setTasks(prev => {
+            const updated = prev.map(task =>
                 task.task_id === taskId ? { ...task, status: newStatus } : task
             )
-        )
-    }, [])
+            // Notify parent of change for auto-save
+            if (onTaskChange) {
+                onTaskChange({ ...data, tasks: updated })
+            }
+            return updated
+        })
+    }, [data, onTaskChange])
+
+    const handleSave = async () => {
+        if (!isAuthenticated) {
+            setAuthModalOpen(true)
+            return
+        }
+
+        setIsSaving(true)
+        setSaveError(null)
+        try {
+            await createCoursework({
+                course_name: data.course_name || 'Untitled Coursework',
+                deadline: data.deadline,
+                deadline_note: data.deadline_note,
+                roadmap_data: { ...data, tasks }
+            })
+            setSaveSuccess(true)
+            setTimeout(() => setSaveSuccess(false), 3000)
+        } catch (err) {
+            const message = err instanceof ApiError ? err.message : 'Failed to save'
+            setSaveError(message)
+        } finally {
+            setIsSaving(false)
+        }
+    }
 
     const toggleExpand = (taskId: string) => {
         setExpandedTask(prev => prev === taskId ? null : taskId)
@@ -127,7 +171,53 @@ export function Roadmap({ data }: RoadmapProps) {
                     deadline={data.deadline}
                     deadlineNote={data.deadline_note}
                 />
+
+                {/* Save Button - Only show if not already saved */}
+                {!isSaved && (
+                    <div className="flex flex-col items-center gap-3">
+                        <Button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            size="lg"
+                            className="h-12 px-6"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : isAuthenticated ? (
+                                <>
+                                    <Save className="w-5 h-5 mr-2" />
+                                    Save to My Courseworks
+                                </>
+                            ) : (
+                                <>
+                                    <LogIn className="w-5 h-5 mr-2" />
+                                    Login to Save
+                                </>
+                            )}
+                        </Button>
+                        {saveSuccess && (
+                            <p className="text-sm text-[var(--color-success)] animate-fade-in">
+                                ✓ Saved successfully! View in My Courseworks.
+                            </p>
+                        )}
+                        {saveError && (
+                            <p className="text-sm text-[var(--color-error)] animate-fade-in">
+                                {saveError}
+                            </p>
+                        )}
+                    </div>
+                )}
             </div>
+
+            {/* Auth Modal */}
+            <AuthModal
+                isOpen={authModalOpen}
+                onClose={() => setAuthModalOpen(false)}
+                initialMode="register"
+            />
 
             {/* AI Disclaimer */}
             <div className="max-w-4xl mx-auto p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
@@ -301,237 +391,237 @@ export function Roadmap({ data }: RoadmapProps) {
                     <div className="flex-1 h-px bg-[var(--color-border)]" />
                 </div>
                 <div className="max-w-5xl mx-auto space-y-8">
-                {groupedTasks.map((group, groupIndex) => {
-                    const isExpanded = expandedMilestone === group.milestone.id
-                    const milestoneProgress = getMilestoneProgress(group.tasks)
-                    const isComplete = milestoneProgress === 100
+                    {groupedTasks.map((group, groupIndex) => {
+                        const isExpanded = expandedMilestone === group.milestone.id
+                        const milestoneProgress = getMilestoneProgress(group.tasks)
+                        const isComplete = milestoneProgress === 100
 
-                    return (
-                        <div key={group.milestone.id} className="relative group">
-                            {/* Milestone Header */}
-                            <button
-                                onClick={() => toggleMilestone(group.milestone.id)}
-                                className={cn(
-                                    "w-full glass rounded-3xl p-8 text-left transition-all duration-300",
-                                    "hover:border-[var(--color-primary)]/40 hover:translate-x-2",
-                                    isExpanded && "border-[var(--color-primary)]/40 glow"
-                                )}
-                            >
-                                <div className="flex items-center gap-6">
-                                    {/* Milestone Icon */}
-                                    <div className={cn(
-                                        "flex-shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center transition-colors duration-300",
-                                        isComplete
-                                            ? "bg-[var(--color-success)]/20"
-                                            : "bg-[var(--color-primary)]/20"
-                                    )}>
-                                        {isComplete ? (
-                                            <CheckCircle2 className="w-8 h-8 text-[var(--color-success)]" />
-                                        ) : (
-                                            <Flag className="w-8 h-8 text-[var(--color-primary)]" />
-                                        )}
-                                    </div>
-
-                                    {/* Milestone Info */}
-                                    <div className="flex-1 min-w-0 py-2">
-                                        <div className="flex items-center gap-4 mb-2">
-                                            <span className="text-sm font-mono text-[var(--color-primary-light)] tracking-wider">
-                                                MILESTONE {groupIndex + 1}
-                                            </span>
-                                            <Badge variant={isComplete ? "success" : "outline"} className="text-xs px-3 py-1">
-                                                {milestoneProgress}%
-                                            </Badge>
+                        return (
+                            <div key={group.milestone.id} className="relative group">
+                                {/* Milestone Header */}
+                                <button
+                                    onClick={() => toggleMilestone(group.milestone.id)}
+                                    className={cn(
+                                        "w-full glass rounded-3xl p-8 text-left transition-all duration-300",
+                                        "hover:border-[var(--color-primary)]/40 hover:translate-x-2",
+                                        isExpanded && "border-[var(--color-primary)]/40 glow"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-6">
+                                        {/* Milestone Icon */}
+                                        <div className={cn(
+                                            "flex-shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center transition-colors duration-300",
+                                            isComplete
+                                                ? "bg-[var(--color-success)]/20"
+                                                : "bg-[var(--color-primary)]/20"
+                                        )}>
+                                            {isComplete ? (
+                                                <CheckCircle2 className="w-8 h-8 text-[var(--color-success)]" />
+                                            ) : (
+                                                <Flag className="w-8 h-8 text-[var(--color-primary)]" />
+                                            )}
                                         </div>
-                                        <h2 className="text-2xl font-bold mb-2">{group.milestone.title}</h2>
-                                        {group.milestone.description && (
-                                            <p className="text-[var(--color-text-secondary)] leading-relaxed">
-                                                {group.milestone.description}
+
+                                        {/* Milestone Info */}
+                                        <div className="flex-1 min-w-0 py-2">
+                                            <div className="flex items-center gap-4 mb-2">
+                                                <span className="text-sm font-mono text-[var(--color-primary-light)] tracking-wider">
+                                                    MILESTONE {groupIndex + 1}
+                                                </span>
+                                                <Badge variant={isComplete ? "success" : "outline"} className="text-xs px-3 py-1">
+                                                    {milestoneProgress}%
+                                                </Badge>
+                                            </div>
+                                            <h2 className="text-2xl font-bold mb-2">{group.milestone.title}</h2>
+                                            {group.milestone.description && (
+                                                <p className="text-[var(--color-text-secondary)] leading-relaxed">
+                                                    {group.milestone.description}
+                                                </p>
+                                            )}
+                                            <p className="text-sm text-[var(--color-text-muted)] mt-3">
+                                                {group.tasks.filter(t => t.status === 'done').length} of {group.tasks.length} tasks complete
                                             </p>
-                                        )}
-                                        <p className="text-sm text-[var(--color-text-muted)] mt-3">
-                                            {group.tasks.filter(t => t.status === 'done').length} of {group.tasks.length} tasks complete
-                                        </p>
+                                        </div>
+
+                                        {/* Expand Icon */}
+                                        <div className="flex-shrink-0 px-2">
+                                            {isExpanded ? (
+                                                <ChevronUp className="w-6 h-6 text-[var(--color-text-muted)]" />
+                                            ) : (
+                                                <ChevronDown className="w-6 h-6 text-[var(--color-text-muted)]" />
+                                            )}
+                                        </div>
                                     </div>
 
-                                    {/* Expand Icon */}
-                                    <div className="flex-shrink-0 px-2">
-                                        {isExpanded ? (
-                                            <ChevronUp className="w-6 h-6 text-[var(--color-text-muted)]" />
-                                        ) : (
-                                            <ChevronDown className="w-6 h-6 text-[var(--color-text-muted)]" />
-                                        )}
+                                    {/* Progress Bar */}
+                                    <div className="mt-8 h-2 bg-[var(--color-surface-elevated)] rounded-full overflow-hidden">
+                                        <div
+                                            className={cn(
+                                                "h-full transition-all duration-700 rounded-full",
+                                                isComplete ? "bg-[var(--color-success)]" : "bg-[var(--color-primary)]"
+                                            )}
+                                            style={{ width: `${milestoneProgress}%` }}
+                                        />
                                     </div>
-                                </div>
+                                </button>
 
-                                {/* Progress Bar */}
-                                <div className="mt-8 h-2 bg-[var(--color-surface-elevated)] rounded-full overflow-hidden">
-                                    <div
-                                        className={cn(
-                                            "h-full transition-all duration-700 rounded-full",
-                                            isComplete ? "bg-[var(--color-success)]" : "bg-[var(--color-primary)]"
-                                        )}
-                                        style={{ width: `${milestoneProgress}%` }}
-                                    />
-                                </div>
-                            </button>
+                                {/* Tasks List */}
+                                {isExpanded && (
+                                    <div className="mt-6 ml-8 pl-8 border-l-2 border-[var(--color-border)] space-y-6 animate-fade-in">
+                                        {group.tasks.map((task, taskIndex) => {
+                                            const isTaskExpanded = expandedTask === task.task_id
+                                            const hasDetails = task.pdf_snippet || (task.related_files?.length ?? 0) > 0 || (task.commands?.length ?? 0) > 0
 
-                            {/* Tasks List */}
-                            {isExpanded && (
-                                <div className="mt-6 ml-8 pl-8 border-l-2 border-[var(--color-border)] space-y-6 animate-fade-in">
-                                    {group.tasks.map((task, taskIndex) => {
-                                        const isTaskExpanded = expandedTask === task.task_id
-                                        const hasDetails = task.pdf_snippet || (task.related_files?.length ?? 0) > 0 || (task.commands?.length ?? 0) > 0
+                                            return (
+                                                <div
+                                                    key={task.task_id}
+                                                    className={cn(
+                                                        "glass rounded-2xl p-8 transition-all duration-300",
+                                                        "hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-surface-elevated)]/30",
+                                                        task.status === 'done' && "opacity-60"
+                                                    )}
+                                                >
+                                                    {/* Task Header */}
+                                                    <div className="flex items-start gap-6">
+                                                        {/* Status Button */}
+                                                        <button
+                                                            onClick={(e) => cycleStatus(task, e)}
+                                                            className="flex-shrink-0 mt-1 hover:scale-110 transition-transform"
+                                                            title="Click to change status"
+                                                        >
+                                                            {getStatusIcon(task.status)}
+                                                        </button>
 
-                                        return (
-                                            <div
-                                                key={task.task_id}
-                                                className={cn(
-                                                    "glass rounded-2xl p-8 transition-all duration-300",
-                                                    "hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-surface-elevated)]/30",
-                                                    task.status === 'done' && "opacity-60"
-                                                )}
-                                            >
-                                                {/* Task Header */}
-                                                <div className="flex items-start gap-6">
-                                                    {/* Status Button */}
-                                                    <button
-                                                        onClick={(e) => cycleStatus(task, e)}
-                                                        className="flex-shrink-0 mt-1 hover:scale-110 transition-transform"
-                                                        title="Click to change status"
-                                                    >
-                                                        {getStatusIcon(task.status)}
-                                                    </button>
+                                                        {/* Task Content */}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-3 flex-wrap mb-3">
+                                                                <span className="text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-wide">
+                                                                    Task {taskIndex + 1}
+                                                                </span>
+                                                                {task.priority === 0 && (
+                                                                    <Badge variant="warning" className="text-[10px] px-2 py-0.5">PRIORITY</Badge>
+                                                                )}
+                                                                {task.estimated_time && (
+                                                                    <Badge variant="outline" className="text-[10px] px-2 py-0.5">
+                                                                        <Clock className="w-3 h-3 mr-1" />
+                                                                        {task.estimated_time}
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
 
-                                                    {/* Task Content */}
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-3 flex-wrap mb-3">
-                                                            <span className="text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-wide">
-                                                                Task {taskIndex + 1}
-                                                            </span>
-                                                            {task.priority === 0 && (
-                                                                <Badge variant="warning" className="text-[10px] px-2 py-0.5">PRIORITY</Badge>
+                                                            <h3 className={cn(
+                                                                "text-lg font-bold mb-3",
+                                                                task.status === 'done' && "line-through text-[var(--color-text-muted)]"
+                                                            )}>
+                                                                {task.title}
+                                                            </h3>
+
+                                                            <p className="text-[var(--color-text-secondary)] leading-relaxed text-base">
+                                                                {task.description}
+                                                            </p>
+
+                                                            {/* Quick Meta */}
+                                                            {(task.related_files?.length ?? 0) > 0 && !isTaskExpanded && (
+                                                                <div className="flex items-center gap-2 mt-4 text-sm text-[var(--color-text-muted)]">
+                                                                    <FileCode className="w-4 h-4" />
+                                                                    <span>{task.related_files?.join(', ')}</span>
+                                                                </div>
                                                             )}
-                                                            {task.estimated_time && (
-                                                                <Badge variant="outline" className="text-[10px] px-2 py-0.5">
-                                                                    <Clock className="w-3 h-3 mr-1" />
-                                                                    {task.estimated_time}
-                                                                </Badge>
+
+                                                            {/* Expand Button */}
+                                                            {hasDetails && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => toggleExpand(task.task_id)}
+                                                                    className="mt-4 text-[var(--color-primary)] hover:text-[var(--color-primary-light)] px-0 h-auto"
+                                                                >
+                                                                    <span className="text-sm font-medium">
+                                                                        {isTaskExpanded ? 'Hide details' : 'Show details'}
+                                                                    </span>
+                                                                    {isTaskExpanded ? (
+                                                                        <ChevronUp className="w-4 h-4 ml-1" />
+                                                                    ) : (
+                                                                        <ChevronDown className="w-4 h-4 ml-1" />
+                                                                    )}
+                                                                </Button>
+                                                            )}
+
+                                                            {/* Expanded Details */}
+                                                            {isTaskExpanded && hasDetails && (
+                                                                <div className="mt-6 pt-6 border-t border-[var(--color-border)] space-y-6 animate-fade-in">
+                                                                    {task.pdf_snippet && (
+                                                                        <div>
+                                                                            <div className="flex items-center gap-2 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
+                                                                                <Quote className="w-4 h-4" />
+                                                                                From the Specification
+                                                                            </div>
+                                                                            <blockquote className="text-base text-[var(--color-text-secondary)] bg-[var(--color-surface-elevated)] p-6 rounded-2xl border-l-4 border-[var(--color-primary)] italic leading-relaxed">
+                                                                                &quot;{task.pdf_snippet}&quot;
+                                                                            </blockquote>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {task.related_files && task.related_files.length > 0 && (
+                                                                        <div>
+                                                                            <div className="flex items-center gap-2 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
+                                                                                <FileCode className="w-4 h-4" />
+                                                                                Files to Work On
+                                                                            </div>
+                                                                            <div className="flex flex-wrap gap-3">
+                                                                                {task.related_files.map((file, i) => (
+                                                                                    <code
+                                                                                        key={i}
+                                                                                        className="text-sm bg-[var(--color-surface-elevated)] px-4 py-2 rounded-xl text-[var(--color-primary-light)] font-mono border border-[var(--color-border)]"
+                                                                                    >
+                                                                                        {file}
+                                                                                    </code>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {task.commands && task.commands.length > 0 && (
+                                                                        <div>
+                                                                            <div className="flex items-center gap-2 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
+                                                                                <Terminal className="w-4 h-4" />
+                                                                                Commands
+                                                                            </div>
+                                                                            <div className="space-y-3">
+                                                                                {task.commands.map((cmd, i) => (
+                                                                                    <div
+                                                                                        key={i}
+                                                                                        className="text-sm font-mono bg-[var(--color-background)] px-6 py-4 rounded-xl text-[var(--color-success)] border border-[var(--color-border)] shadow-inner"
+                                                                                    >
+                                                                                        $ {cmd}
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             )}
                                                         </div>
-
-                                                        <h3 className={cn(
-                                                            "text-lg font-bold mb-3",
-                                                            task.status === 'done' && "line-through text-[var(--color-text-muted)]"
-                                                        )}>
-                                                            {task.title}
-                                                        </h3>
-
-                                                        <p className="text-[var(--color-text-secondary)] leading-relaxed text-base">
-                                                            {task.description}
-                                                        </p>
-
-                                                        {/* Quick Meta */}
-                                                        {(task.related_files?.length ?? 0) > 0 && !isTaskExpanded && (
-                                                            <div className="flex items-center gap-2 mt-4 text-sm text-[var(--color-text-muted)]">
-                                                                <FileCode className="w-4 h-4" />
-                                                                <span>{task.related_files?.join(', ')}</span>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Expand Button */}
-                                                        {hasDetails && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => toggleExpand(task.task_id)}
-                                                                className="mt-4 text-[var(--color-primary)] hover:text-[var(--color-primary-light)] px-0 h-auto"
-                                                            >
-                                                                <span className="text-sm font-medium">
-                                                                    {isTaskExpanded ? 'Hide details' : 'Show details'}
-                                                                </span>
-                                                                {isTaskExpanded ? (
-                                                                    <ChevronUp className="w-4 h-4 ml-1" />
-                                                                ) : (
-                                                                    <ChevronDown className="w-4 h-4 ml-1" />
-                                                                )}
-                                                            </Button>
-                                                        )}
-
-                                                        {/* Expanded Details */}
-                                                        {isTaskExpanded && hasDetails && (
-                                                            <div className="mt-6 pt-6 border-t border-[var(--color-border)] space-y-6 animate-fade-in">
-                                                                {task.pdf_snippet && (
-                                                                    <div>
-                                                                        <div className="flex items-center gap-2 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
-                                                                            <Quote className="w-4 h-4" />
-                                                                            From the Specification
-                                                                        </div>
-                                                                        <blockquote className="text-base text-[var(--color-text-secondary)] bg-[var(--color-surface-elevated)] p-6 rounded-2xl border-l-4 border-[var(--color-primary)] italic leading-relaxed">
-                                                                            &quot;{task.pdf_snippet}&quot;
-                                                                        </blockquote>
-                                                                    </div>
-                                                                )}
-
-                                                                {task.related_files && task.related_files.length > 0 && (
-                                                                    <div>
-                                                                        <div className="flex items-center gap-2 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
-                                                                            <FileCode className="w-4 h-4" />
-                                                                            Files to Work On
-                                                                        </div>
-                                                                        <div className="flex flex-wrap gap-3">
-                                                                            {task.related_files.map((file, i) => (
-                                                                                <code
-                                                                                    key={i}
-                                                                                    className="text-sm bg-[var(--color-surface-elevated)] px-4 py-2 rounded-xl text-[var(--color-primary-light)] font-mono border border-[var(--color-border)]"
-                                                                                >
-                                                                                    {file}
-                                                                                </code>
-                                                                            ))}
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-
-                                                                {task.commands && task.commands.length > 0 && (
-                                                                    <div>
-                                                                        <div className="flex items-center gap-2 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
-                                                                            <Terminal className="w-4 h-4" />
-                                                                            Commands
-                                                                        </div>
-                                                                        <div className="space-y-3">
-                                                                            {task.commands.map((cmd, i) => (
-                                                                                <div
-                                                                                    key={i}
-                                                                                    className="text-sm font-mono bg-[var(--color-background)] px-6 py-4 rounded-xl text-[var(--color-success)] border border-[var(--color-border)] shadow-inner"
-                                                                                >
-                                                                                    $ {cmd}
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    )
-                })}
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )
+                    })}
 
-                {/* Completion Card */}
-                <div className="glass rounded-3xl p-12 text-center bg-gradient-to-br from-[var(--color-success)]/10 to-transparent">
-                    <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-[var(--color-success)] to-[var(--color-primary)] flex items-center justify-center glow">
-                        <Trophy className="w-10 h-10 text-white" />
+                    {/* Completion Card */}
+                    <div className="glass rounded-3xl p-12 text-center bg-gradient-to-br from-[var(--color-success)]/10 to-transparent">
+                        <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-[var(--color-success)] to-[var(--color-primary)] flex items-center justify-center glow">
+                            <Trophy className="w-10 h-10 text-white" />
+                        </div>
+                        <h3 className="text-2xl font-bold mb-3">🎉 Coursework Complete!</h3>
+                        <p className="text-lg text-[var(--color-text-secondary)]">
+                            Complete all milestones above to finish your coursework
+                        </p>
                     </div>
-                    <h3 className="text-2xl font-bold mb-3">🎉 Coursework Complete!</h3>
-                    <p className="text-lg text-[var(--color-text-secondary)]">
-                        Complete all milestones above to finish your coursework
-                    </p>
-                </div>
                 </div>
             </section>
         </div>
