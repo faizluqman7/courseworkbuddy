@@ -11,12 +11,15 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 
 from routers import decompose, auth, courseworks
-from routers.auth import limiter
+from routers.auth import limiter, RATE_LIMIT_ENABLED
 from database import create_tables
+
+# Optional rate limiting imports
+if RATE_LIMIT_ENABLED:
+    from slowapi import _rate_limit_exceeded_handler
+    from slowapi.errors import RateLimitExceeded
 
 # Load environment variables
 load_dotenv()
@@ -41,9 +44,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Rate limiting
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Rate limiting (optional)
+if RATE_LIMIT_ENABLED and limiter:
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configure CORS for frontend
 app.add_middleware(

@@ -3,8 +3,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
 from database import get_db
 from services.auth_service import (
@@ -20,7 +18,24 @@ from services.auth_service import (
     blacklist_token,
 )
 
-limiter = Limiter(key_func=get_remote_address)
+# Optional rate limiting (skip if slowapi not installed)
+try:
+    from slowapi import Limiter
+    from slowapi.util import get_remote_address
+    limiter = Limiter(key_func=get_remote_address)
+    RATE_LIMIT_ENABLED = True
+except ImportError:
+    limiter = None
+    RATE_LIMIT_ENABLED = False
+
+
+def rate_limit(limit: str):
+    """Decorator that applies rate limit only if slowapi is available."""
+    def decorator(func):
+        if RATE_LIMIT_ENABLED and limiter:
+            return limiter.limit(limit)(func)
+        return func
+    return decorator
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
@@ -51,7 +66,7 @@ async def require_auth(
 
 
 @router.post("/register", response_model=TokenResponse)
-@limiter.limit("3/minute")
+@rate_limit("3/minute")
 async def register(
     request: Request,
     user_data: UserCreate,
@@ -73,7 +88,7 @@ async def register(
 
 
 @router.post("/login", response_model=TokenResponse)
-@limiter.limit("5/minute")
+@rate_limit("5/minute")
 async def login(
     request: Request,
     credentials: UserLogin,
