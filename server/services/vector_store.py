@@ -1,59 +1,77 @@
-"""ChromaDB vector store service."""
+"""Qdrant Cloud vector store service."""
 
 import os
 from typing import List, Optional, Dict, Any
-from pathlib import Path
-import chromadb
-from chromadb.config import Settings
+from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, VectorParams
 from langchain_core.documents import Document
-from langchain_chroma import Chroma
+from langchain_qdrant import QdrantVectorStore
 
 from services.langchain_service import get_langchain_service
 
 
 class VectorStoreService:
-    """Manage ChromaDB vector store for document embeddings."""
+    """Manage Qdrant Cloud vector store for document embeddings."""
     
-    def __init__(self, persist_directory: Optional[str] = None):
+    def __init__(self):
         """
         Initialize vector store service.
         
-        Args:
-            persist_directory: Path to store ChromaDB data. 
-                             Defaults to ./chroma_data in server directory.
+        Requires environment variables:
+            - QDRANT_URL: Qdrant Cloud cluster URL
+            - QDRANT_API_KEY: Qdrant Cloud API key
         """
-        self.persist_directory = persist_directory or os.getenv(
-            "CHROMA_PERSIST_DIR", 
-            str(Path(__file__).parent.parent / "chroma_data")
-        )
+        self.qdrant_url = os.getenv("QDRANT_URL", "")
+        self.qdrant_api_key = os.getenv("QDRANT_API_KEY", "")
         
-        # Ensure directory exists
-        Path(self.persist_directory).mkdir(parents=True, exist_ok=True)
-        
-        # Initialize ChromaDB client with persistent storage
-        self.client = chromadb.PersistentClient(
-            path=self.persist_directory,
-            settings=Settings(anonymized_telemetry=False),
-        )
+        if not self.qdrant_url or not self.qdrant_api_key:
+            # Fallback to in-memory for local dev
+            print("Warning: QDRANT_URL/QDRANT_API_KEY not set. Using in-memory storage.")
+            self.client = QdrantClient(":memory:")
+            self._is_memory = True
+        else:
+            self.client = QdrantClient(
+                url=self.qdrant_url,
+                api_key=self.qdrant_api_key,
+            )
+            self._is_memory = False
         
         self.langchain = get_langchain_service()
-        self._vectorstores: Dict[str, Chroma] = {}
+        self._vectorstores: Dict[str, QdrantVectorStore] = {}
+        
+        # Embedding dimension for Google's embeddings
+        self._embedding_dim = 768
     
-    def get_or_create_collection(self, collection_name: str) -> Chroma:
+    def _ensure_collection(self, collection_name: str):
+        """Ensure collection exists with proper configuration."""
+        try:
+            self.client.get_collection(collection_name)
+        except Exception:
+            # Collection doesn't exist, create it
+            self.client.create_collection(
+                collection_name=collection_name,
+                vectors_config=VectorParams(
+                    size=self._embedding_dim,
+                    distance=Distance.COSINE,
+                ),
+            )
+    
+    def get_or_create_collection(self, collection_name: str) -> QdrantVectorStore:
         """
-        Get or create a LangChain Chroma vector store.
+        Get or create a LangChain Qdrant vector store.
         
         Args:
             collection_name: Name of the collection (usually 'coursework_{user_id}')
         
         Returns:
-            Chroma vector store instance
+            QdrantVectorStore instance
         """
         if collection_name not in self._vectorstores:
-            self._vectorstores[collection_name] = Chroma(
+            self._ensure_collection(collection_name)
+            self._vectorstores[collection_name] = QdrantVectorStore(
+                client=self.client,
                 collection_name=collection_name,
-                embedding_function=self.langchain.get_embeddings(),
-                client=self.client,  # Use shared client to avoid settings conflict
+                embedding=self.langchain.get_embeddings(),
             )
         return self._vectorstores[collection_name]
     
@@ -70,8 +88,10 @@ class VectorStoreService:
             documents: List of Document objects with content and metadata
         
         Returns:
-            List of document IDs assigned by ChromaDB
+            List of document IDs assigned
         """
+        if not documents:
+            return []
         vectorstore = self.get_or_create_collection(collection_name)
         ids = vectorstore.add_documents(documents)
         return ids
@@ -119,9 +139,22 @@ class VectorStoreService:
             collection_name: Collection containing the document
             document_id: Document ID to delete
         """
-        vectorstore = self.get_or_create_collection(collection_name)
-        # Delete by metadata filter
-        vectorstore.delete(where={"document_id": document_id})
+        try:
+            from qdrant_client.models import Filter, FieldCondition, MatchValue
+            
+            self.client.delete(
+                collection_name=collection_name,
+                points_selector=Filter(
+                    must=[
+                        FieldCondition(
+                            key="metadata.document_id",
+                            match=MatchValue(value=document_id),
+                        )
+                    ]
+                ),
+            )
+        except Exception as e:
+            print(f"Delete document error: {e}")
     
     def delete_collection(self, collection_name: str):
         """Delete an entire collection."""
@@ -148,10 +181,10 @@ class VectorStoreService:
     def get_collection_stats(self, collection_name: str) -> Dict[str, Any]:
         """Get statistics about a collection."""
         try:
-            collection = self.client.get_collection(collection_name)
+            info = self.client.get_collection(collection_name)
             return {
                 "name": collection_name,
-                "count": collection.count(),
+                "count": info.points_count,
             }
         except Exception:
             return {"name": collection_name, "count": 0}

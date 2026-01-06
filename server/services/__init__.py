@@ -5,7 +5,7 @@ CourseworkBuddy Services
 Core services for the multi-agent RAG system:
 - langchain_service: LangChain/Gemini configuration
 - document_processor: PDF chunking and processing
-- vector_store: ChromaDB vector storage
+- vector_store: Qdrant Cloud vector storage
 - rag_chain: Retrieval-Augmented Generation
 - agents: Multi-agent orchestration system
 
