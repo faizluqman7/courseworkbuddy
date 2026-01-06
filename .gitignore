@@ -26,3 +26,19 @@ server/.env
 server/models/__pycache__
 server/prompts/__pycache__
 server/services/__pycache__
+server/services/agents/__pycache__
+server/routers/__pycache__
+server/__pycache__
+
+# ChromaDB vector store data
+server/chroma_data/
+chroma_data/
+
+# Extracted images cache
+server/image_cache/
+image_cache/
+
+# Python virtual environment
+server/venv/
+venv/
+.venv/

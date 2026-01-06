@@ -107,3 +107,33 @@ class ErrorResponse(BaseModel):
     detail: str
     error_code: Optional[str] = None
 
+
+# ============ Chat/RAG Models ============
+
+class DecomposeResponseWithSession(DecompositionResponse):
+    """Decomposition response with session info for follow-up chat."""
+    session_id: str = Field(..., description="Session ID for follow-up chat")
+    document_id: str = Field(..., description="Document ID for reference")
+
+
+class ChatRequest(BaseModel):
+    """Request body for chat endpoint."""
+    question: str = Field(..., min_length=1, max_length=2000, description="User's question")
+    session_id: str = Field(..., description="Session ID from decomposition response")
+
+
+class ChatSource(BaseModel):
+    """Source reference from retrieved context."""
+    chunk_id: str = Field(default="", description="Unique chunk identifier")
+    chunk_index: int = Field(..., description="Index of chunk in document")
+    preview: str = Field(..., description="Preview of chunk content")
+    source_type: str = Field(default="text", description="Type: 'text' or 'image'")
+    image_path: Optional[str] = Field(None, description="Path to image if source is an image")
+
+
+class ChatResponse(BaseModel):
+    """Response from chat endpoint."""
+    answer: str = Field(..., description="Generated answer")
+    sources: list[ChatSource] = Field(default_factory=list, description="Source chunks used")
+    images: list[str] = Field(default_factory=list, description="Relevant image paths for display")
+

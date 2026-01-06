@@ -87,6 +87,10 @@ export interface DecompositionResponse {
 
     // Extraction metadata
     extraction_warnings?: string[];
+
+    // Session info for follow-up chat (new in v2)
+    session_id?: string;
+    document_id?: string;
 }
 
 export interface DecompositionRequest {
@@ -95,3 +99,30 @@ export interface DecompositionRequest {
     repo_url?: string;
 }
 
+// ============ Chat Types ============
+
+export interface ChatMessage {
+    role: 'user' | 'assistant';
+    content: string;
+    sources?: ChatSource[];
+    images?: string[];  // Relevant image paths for display
+}
+
+export interface ChatSource {
+    chunk_id: string;
+    chunk_index: number;
+    preview: string;
+    source_type?: 'text' | 'image';  // Type of source
+    image_path?: string;  // Path if source is an image
+}
+
+export interface ChatRequest {
+    question: string;
+    session_id: string;
+}
+
+export interface ChatResponse {
+    answer: string;
+    sources: ChatSource[];
+    images: string[];  // Relevant image paths for display
+}

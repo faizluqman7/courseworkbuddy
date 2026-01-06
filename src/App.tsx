@@ -7,6 +7,7 @@ import { Roadmap } from '@/components/tasks/Roadmap'
 import { Dashboard } from '@/pages/Dashboard'
 import { CourseworkDetail } from '@/pages/CourseworkDetail'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ChatButton } from '@/components/chat'
 import { useDecomposition } from '@/hooks/useDecomposition'
 import type { DecompositionResponse } from '@/types'
 import {
@@ -72,6 +73,9 @@ function HomePage() {
           </div>
 
           <Roadmap data={result} />
+
+          {/* Chat Button - appears after decomposition */}
+          <ChatButton sessionId={result.session_id || null} />
         </div>
       ) : (
         <>

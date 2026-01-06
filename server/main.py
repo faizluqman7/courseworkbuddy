@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 
-from routers import decompose, auth, courseworks
+from routers import decompose, auth, courseworks, chat, images
 from routers.auth import limiter, RATE_LIMIT_ENABLED
 from database import create_tables
 
@@ -36,9 +36,9 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app
 app = FastAPI(
-    title="InfoFlow API",
-    description="AI-powered coursework decomposition tool for University of Edinburgh Informatics students",
-    version="1.0.0",
+    title="CourseworkBuddy API",
+    description="AI-powered coursework decomposition with multi-agent RAG for University of Edinburgh Informatics students",
+    version="2.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     lifespan=lifespan,
@@ -66,6 +66,8 @@ app.add_middleware(
 app.include_router(decompose.router)
 app.include_router(auth.router)
 app.include_router(courseworks.router)
+app.include_router(chat.router)
+app.include_router(images.router)
 
 
 @app.get("/api/health")
@@ -78,8 +80,13 @@ async def health_check():
 async def root():
     """Root endpoint with API information."""
     return {
-        "name": "InfoFlow API",
-        "version": "1.0.0",
+        "name": "CourseworkBuddy API",
+        "version": "2.0.0",
         "docs": "/api/docs",
+        "features": [
+            "Multi-agent RAG decomposition",
+            "Follow-up chat with context",
+            "ChromaDB vector storage",
+        ],
     }
 

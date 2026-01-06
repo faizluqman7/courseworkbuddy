@@ -65,6 +65,26 @@ async def require_auth(
         raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
+async def get_current_user_optional(
+    authorization: Optional[str] = Header(None),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Dependency that optionally gets the current user.
+    Returns None if not authenticated (instead of raising an error).
+    """
+    token = get_token_from_header(authorization)
+    if not token:
+        return None
+    
+    try:
+        user = await get_current_user(db, token)
+        return user
+    except AuthError:
+        return None
+
+
+
 @router.post("/register", response_model=TokenResponse)
 @rate_limit("3/minute")
 async def register(
