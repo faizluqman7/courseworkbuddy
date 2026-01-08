@@ -107,9 +107,9 @@ app.include_router(chat.router)
 app.include_router(images.router)
 
 
-@app.get("/api/health")
+@app.api_route("/api/health", methods=["GET", "HEAD"])
 async def health_check():
-    """Health check endpoint."""
+    """Health check endpoint - supports both GET and HEAD (for UptimeRobot)."""
     return {"status": "healthy", "service": "infoflow-api"}
 
 
