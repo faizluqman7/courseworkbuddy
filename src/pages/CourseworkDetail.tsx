@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Loader2, AlertCircle, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Roadmap } from '@/components/tasks/Roadmap';
+import { ChatButton } from '@/components/chat';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     getCoursework,
@@ -187,6 +188,11 @@ export function CourseworkDetail() {
                 onTaskChange={handleChange}
                 isSaved={true}
             />
+
+            {/* Chat Button - appears if session_id is available */}
+            {coursework.roadmap_data.session_id && (
+                <ChatButton sessionId={coursework.roadmap_data.session_id} />
+            )}
         </div>
     );
 }
