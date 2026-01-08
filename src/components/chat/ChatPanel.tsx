@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { Send, Bot, User, Loader2, X, MessageSquare, Sparkles, Image } from 'lucide-react';
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 interface Message {
     role: 'user' | 'assistant';
     content: string;
@@ -42,7 +44,7 @@ export function ChatPanel({ sessionId, isOpen, onClose }: ChatPanelProps) {
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/chat/', {
+            const response = await fetch(`${API_BASE}/chat/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -203,7 +205,7 @@ export function ChatPanel({ sessionId, isOpen, onClose }: ChatPanelProps) {
                                         const pathParts = imagePath.split('/');
                                         const filename = pathParts[pathParts.length - 1];
                                         const documentId = pathParts[pathParts.length - 2];
-                                        const imageUrl = `/api/images/${documentId}/${filename}`;
+                                        const imageUrl = `${API_BASE}/images/${documentId}/${filename}`;
 
                                         return (
                                             <div key={j} className="relative group">
