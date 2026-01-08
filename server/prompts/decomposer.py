@@ -76,7 +76,7 @@ Your goal is to break down a complex assignment specification into a comprehensi
 
 Return a valid JSON object with this exact structure:
 
-{
+{{
   "course_name": "Detected course name",
   "summary_overview": "2-3 sentence summary of the coursework",
   "what_you_need_to_do": "Plain language explanation of overall goal",
@@ -89,70 +89,70 @@ Return a valid JSON object with this exact structure:
   "setup_instructions": ["Step 1", "Step 2"],
   
   "get_started_steps": [
-    {
+    {{
       "step_number": 1,
       "title": "Clone the repository",
       "description": "Download the skeleton code from...",
       "commands": ["git clone ...", "cd project"],
       "expected_output": "You should see src/, include/, Makefile"
-    }
+    }}
   ],
   
   "directory_structure": [
-    {"path": "src/", "type": "directory", "description": "Main source code"},
-    {"path": "src/main.c", "type": "file", "description": "Entry point"}
+    {{"path": "src/", "type": "directory", "description": "Main source code"}},
+    {{"path": "src/main.c", "type": "file", "description": "Entry point"}}
   ],
   
   "terminology": [
-    {
+    {{
       "term": "Sparse Matrix",
       "definition": "A matrix where most elements are zero, stored efficiently",
       "example": "A 1000x1000 matrix with only 100 non-zero values"
-    }
+    }}
   ],
   
   "marking_criteria": [
-    {
+    {{
       "component": "Implementation",
       "percentage": 60,
       "description": "Correct implementation of required features",
       "priority": "essential"
-    }
+    }}
   ],
   
   "prioritization_tiers": [
-    {
+    {{
       "tier": "Essential",
       "description": "Core requirements for passing",
       "time_estimate": "20-25 hours",
       "task_ids": ["t1", "t2", "t3"]
-    }
+    }}
   ],
   
   "recommended_schedule": [
-    {
+    {{
       "week": 1,
       "title": "Setup & Foundation",
       "task_ids": ["t1", "t2"],
       "hours_estimate": 10
-    }
+    }}
   ],
   
   "constraints": ["Must use only RDDs", "No external libraries"],
   "debugging_tips": ["Check Spark UI at localhost:4040"],
   
   "milestones": [
-    {
+    {{
       "id": "m1",
       "title": "Part 1: Description",
       "description": "What this milestone covers",
       "summary": "Brief 1-sentence summary",
       "tasks": ["t1", "t2", "t3"]
-    }
+    }}
   ],
   
   "tasks": [
-    {
+    {{
       "task_id": "t1",
       "title": "Clear, actionable task title",
       "description": "What exactly needs to be done",
@@ -163,9 +163,9 @@ Return a valid JSON object with this exact structure:
       "prerequisites": [],
       "priority": 0,
       "status": "todo"
-    }
+    }}
   ]
-}
+}}
 
 ## Anti-Cheat Guardrails
 

@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Loader2, AlertCircle, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Roadmap } from '@/components/tasks/Roadmap';
+import { ChatButton } from '@/components/chat';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     getCoursework,
@@ -187,6 +188,13 @@ export function CourseworkDetail() {
                 onTaskChange={handleChange}
                 isSaved={true}
             />
+
+            {/* Chat Button - only show if we have a valid session/document ID for vector store */}
+            {(coursework.roadmap_data.session_id || coursework.roadmap_data.document_id) && (
+                <ChatButton
+                    sessionId={(coursework.roadmap_data.session_id || coursework.roadmap_data.document_id)!}
+                />
+            )}
         </div>
     );
 }
