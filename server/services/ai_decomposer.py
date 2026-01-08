@@ -166,6 +166,54 @@ def repair_json(text: str) -> str:
             return "{}"
 
 
+def _parse_priority(priority_value) -> int | None:
+    """
+    Parse priority value - handles both integers and strings.
+    
+    Strings like 'essential', 'strong', 'excellence' are converted to priority levels:
+    - 'essential' / 'high' / 'critical' -> 0 (highest)
+    - 'strong' / 'medium' / 'important' -> 1
+    - 'excellence' / 'low' / 'optional' / 'bonus' -> 2
+    """
+    if priority_value is None:
+        return None
+    
+    # If already an integer, return it
+    if isinstance(priority_value, int):
+        return priority_value
+    
+    # Try to convert string to int first
+    try:
+        return int(priority_value)
+    except (ValueError, TypeError):
+        pass
+    
+    # Map string values to priority levels
+    priority_str = str(priority_value).lower().strip()
+    priority_map = {
+        'essential': 0,
+        'critical': 0,
+        'high': 0,
+        'must': 0,
+        'strong': 1,
+        'important': 1,
+        'medium': 1,
+        'should': 1,
+        'excellence': 2,
+        'bonus': 2,
+        'optional': 2,
+        'low': 2,
+        'nice': 2,
+    }
+    
+    for key, value in priority_map.items():
+        if key in priority_str:
+            return value
+    
+    # Default to medium priority
+    return 1
+
+
 def decompose_coursework(pdf_text: str) -> DecompositionResponse:
     """
     Use AI to decompose coursework specification into an Implementation Guide.
@@ -222,7 +270,7 @@ def decompose_coursework(pdf_text: str) -> DecompositionResponse:
                     commands=list(task_data.get("commands", [])) if task_data.get("commands") else [],
                     prerequisites=list(task_data.get("prerequisites", [])) if task_data.get("prerequisites") else [],
                     status=str(task_data.get("status", "todo")),
-                    priority=int(task_data.get("priority")) if task_data.get("priority") is not None else None,
+                    priority=_parse_priority(task_data.get("priority")),
                 ))
             except Exception as e:
                 print(f"Error parsing task: {e}")
