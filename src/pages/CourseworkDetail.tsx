@@ -189,9 +189,11 @@ export function CourseworkDetail() {
                 isSaved={true}
             />
 
-            {/* Chat Button - appears if session_id is available */}
-            {coursework.roadmap_data.session_id && (
-                <ChatButton sessionId={coursework.roadmap_data.session_id} />
+            {/* Chat Button - only show if we have a valid session/document ID for vector store */}
+            {(coursework.roadmap_data.session_id || coursework.roadmap_data.document_id) && (
+                <ChatButton
+                    sessionId={(coursework.roadmap_data.session_id || coursework.roadmap_data.document_id)!}
+                />
             )}
         </div>
     );
