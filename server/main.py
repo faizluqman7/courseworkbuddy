@@ -31,6 +31,17 @@ async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
     # Create database tables on startup
     await create_tables()
+    
+    # Debug: Print all registered routes
+    print("\n" + "="*50)
+    print("Registered Routes:")
+    print("="*50)
+    for route in app.routes:
+        if hasattr(route, 'methods') and hasattr(route, 'path'):
+            methods = ','.join(route.methods)
+            print(f"{methods:8} {route.path}")
+    print("="*50 + "\n")
+    
     yield
     # Cleanup on shutdown (if needed)
 
