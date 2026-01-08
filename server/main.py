@@ -66,6 +66,7 @@ cors_origins = [
     "http://localhost:5173",  # Vite dev server
     "http://localhost:3000",  # Alternative dev port
     "http://127.0.0.1:5173",
+    "https://courseworkbuddy.faizluqman.com",  # Production frontend
 ]
 
 # Add production frontend URL if configured
@@ -73,26 +74,10 @@ frontend_url = os.environ.get("FRONTEND_URL")
 if frontend_url:
     cors_origins.append(frontend_url)
 
-# Configure CORS for frontend
-# Allow Vercel preview deployments (e.g., courseworkbuddy-git-rag-*.vercel.app)
-def is_allowed_origin(origin: str) -> bool:
-    """Check if origin is allowed - supports Vercel preview deployments."""
-    if not origin:
-        return False
-    
-    # Check explicit allowed origins
-    if origin in cors_origins:
-        return True
-    
-    # Allow all Vercel preview deployments
-    if origin.startswith("https://") and ".vercel.app" in origin:
-        return True
-    
-    return False
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https://.*\.vercel\.app",  # Allow all Vercel deployments
+    # Allow Vercel deployments and faizluqman.com subdomains
+    allow_origin_regex=r"https://(.*\.vercel\.app|.*\.faizluqman\.com)",
     allow_origins=cors_origins,  # Plus explicit origins
     allow_credentials=True,
     allow_methods=["*"],
