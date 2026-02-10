@@ -39,8 +39,8 @@ class VectorStoreService:
         self.langchain = get_langchain_service()
         self._vectorstores: Dict[str, QdrantVectorStore] = {}
         
-        # Embedding dimension for Google's embeddings
-        self._embedding_dim = 768
+        # Embedding dimension for gemini-embedding-001
+        self._embedding_dim = 3072
     
     def _ensure_collection(self, collection_name: str):
         """Ensure collection exists with proper configuration."""
