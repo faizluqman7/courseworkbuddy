@@ -45,9 +45,13 @@ class VectorStoreService:
     def _ensure_collection(self, collection_name: str):
         """Ensure collection exists with proper configuration."""
         try:
-            self.client.get_collection(collection_name)
+            collection_info = self.client.get_collection(collection_name)
+            current_dim = collection_info.config.params.vectors.size
+            if current_dim != self._embedding_dim:
+                print(f"Recreating collection '{collection_name}': {current_dim} -> {self._embedding_dim} dims")
+                self.client.delete_collection(collection_name)
+                raise Exception("recreate")
         except Exception:
-            # Collection doesn't exist, create it
             self.client.create_collection(
                 collection_name=collection_name,
                 vectors_config=VectorParams(
